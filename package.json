@@ -30,6 +30,7 @@
     "gradient-string": "^2.0.0",
     "https-proxy-agent": "^7.0.6",
     "jimp": "^0.22.8",
+    "joy-video-downloader": "^1.2.1",
     "lyrics-finder": "^21.7.0",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.46",
