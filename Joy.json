@@ -11,7 +11,7 @@
   "adminOnlyMsg": false,
   "BOTNAME": "Joy-bot",
   "PREFIX": ".",
-  "react": "☠️",
+  "EMOJI": "🤬",
   "OPERATOR": [
     "",
     "100001435123762"
