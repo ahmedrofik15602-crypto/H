@@ -1,74 +1,94 @@
 const axios = require("axios");
 
-let API_BASE = "";
-
-// GitHub থেকে API URL fetch করা
-axios.get("https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/main/api.json")
-  .then(response => {
-    API_BASE = response.data.api;
-  })
-  .catch(error => {
-    console.error("Error fetching API base URL:", error);
-  });
-
 module.exports.config = {
   name: "teach",
-  version: "1.0.9",
+  version: "5.0.0",
   permission: 0,
   credits: "JOY",
-  description: "Teach Simsimi QnA (Add only)",
+  description: "Teach Simsimi QnA (Supports | and - formats)",
   prefix: true,
   category: "admin",
-  usages: "teach question | answer",
+  usages: "teach question | answer  OR  teach question - answer",
   cooldowns: 2,
 };
 
-module.exports.run = async function({ event, args, api }) {
-  // যদি কোনো argument না দেওয়া হয়
-  if (!args[0]) {
-    return api.sendMessage(
-      "📌 Usage:\n" +
-      ".teach question | answer\n\nউদাহরণ:\n" +
-      ".teach তুমি কেমন আছো? | আমি ভালো আছি",
-      event.threadID,
-      event.messageID
-    );
-  }
-
-  if (!API_BASE) {
-    return api.sendMessage("❌ API base URL not set.", event.threadID, event.messageID);
-  }
-
-  const raw = args.join(" ");
-  if (!raw.includes("|")) {
-    return api.sendMessage("❌ Format: teach question | answer", event.threadID, event.messageID);
-  }
-
-  const [ask, ans] = raw.split("|").map(x => x.trim());
-
-  if (!ask || !ans) {
-    return api.sendMessage("❌ Question বা Answer খালি হতে পারবে না", event.threadID, event.messageID);
-  }
-
+// 🔹 GitHub থেকে API URL লোড
+async function getApiUrl() {
+  const githubApiUrl = "https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/main/api.json";
   try {
-    const res = await axios.get(`${API_BASE}/sim?teach=${encodeURIComponent(raw)}`);
+    const res = await axios.get(githubApiUrl, { headers: { "Cache-Control": "no-cache" } });
+    return res.data?.api || null;
+  } catch (err) {
+    console.error("❌ GitHub Load Error:", err.message);
+    return null;
+  }
+}
 
-    if (res.data.msg === "already_exists") {
-      return api.sendMessage(
-        `⚠️ Your Data Already Added To Database\n1️⃣ ASK: ${ask}\n2️⃣ ANS: ${ans}`,
-        event.threadID,
-        event.messageID
-      );
+// 🔹 Teach পাঠানো (MongoDB API অনুযায়ী GET request)
+async function sendTeach(apiUrl, ask, ans) {
+  try {
+    const response = await axios.get(`${apiUrl}/sim`, {
+      params: { teach: `${ask}|${ans}` }, // API always uses pipe internally
+    });
+    return response.data;
+  } catch (err) {
+    console.error("❌ Teach Error:", err.response?.data || err.message);
+    return null;
+  }
+}
+
+// =========================
+// MAIN COMMAND
+// =========================
+module.exports.run = async function({ api, event, args }) {
+  const { threadID, messageID } = event;
+  const apiUrl = await getApiUrl();
+
+  if (!apiUrl) {
+    return api.sendMessage("❌ GitHub থেকে API URL লোড করা যায়নি!", threadID, messageID);
+  }
+
+  // 🟢 CASE 1: Reply দিয়ে teach
+  if (event.type === "message_reply") {
+    if (!args[0]) {
+      return api.sendMessage("❌ Usage: reply a message & type: teach [ASK]", threadID, messageID);
     }
 
-    return api.sendMessage(
-      `📝 Your Data Added To Database Successfully\n1️⃣ ASK: ${ask}\n2️⃣ ANS: ${ans}`,
-      event.threadID,
-      event.messageID
-    );
+    const ask = args.join(" ").trim().toLowerCase();
+    const ans = event.messageReply.body?.trim();
+    if (!ans) return api.sendMessage("❌ Reply করা মেসেজে কোনো লেখা পাওয়া যায়নি!", threadID, messageID);
 
-  } catch (e) {
-    console.error(e);
-    return api.sendMessage("❌ API error: " + e.message, event.threadID, event.messageID);
+    const result = await sendTeach(apiUrl, ask, ans);
+    if (result?.success) {
+      return api.sendMessage(`✅ Teach Added!\n💬 ASK: ${ask}\n💡 ANS: ${ans}`, threadID, messageID);
+    } else {
+      return api.sendMessage(`⚠️ Teach failed! ${result?.error || ""}`, threadID, messageID);
+    }
   }
+
+  // 🟡 CASE 2: Normal teach command
+  const input = args.join(" ").trim();
+
+  let ask, ans;
+  if (input.includes("|")) {
+    [ask, ans] = input.split("|").map(x => x.trim());
+  } else if (input.includes("-")) {
+    [ask, ans] = input.split("-").map(x => x.trim());
+  }
+
+  if (ask && ans) {
+    const result = await sendTeach(apiUrl, ask.toLowerCase(), ans);
+    if (result?.success) {
+      return api.sendMessage(`✅ Teach Added!\n💬 ASK: ${ask}\n💡 ANS: ${ans}`, threadID, messageID);
+    } else {
+      return api.sendMessage(`⚠️ Teach failed! ${result?.error || ""}`, threadID, messageID);
+    }
+  }
+
+  // 🔴 CASE 3: Invalid format
+  return api.sendMessage(
+    "❌ Invalid format!\n\n👉 Usage:\n1️⃣ Reply a message: teach [ASK]\n2️⃣ teach question | answer\n3️⃣ teach question - answer",
+    threadID,
+    messageID
+  );
 };
