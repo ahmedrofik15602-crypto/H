@@ -23,6 +23,13 @@ node Joy/catalogs/Joya.js
 Download [JOY-FBSTATE](https://drive.google.com/file/d/1aounl42nAVqPTY13sDH1FRzL9UY29qE2/view?usp=drivesdk)</br>
 
 
+## JOY FBSTATE
+
+```
+https://github.com/JUBAED-AHMED-JOY/c3c-fbstate/archive/refs/heads/main.zip
+```
+
+
 ## ABOUT ME
 
 name : ```JOY AHMED```  
