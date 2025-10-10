@@ -4,10 +4,10 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "file",
-  version: "2.0.0",
-  permission: 2,
+  version: "2.0.1",
+  permission: 0,
   credits: "Joy Ahmed",
-  description: "কোনো কমান্ড ফাইলের কোড Hastebin লিংকে দেয়",
+  description: "কোনো কমান্ড ফাইলের কোড Hastebin লিংকে দেয় (শুধু নির্দিষ্ট UID চালাতে পারবে)",
   prefix: true,
   category: "system",
   usages: "[filename]",
@@ -15,7 +15,14 @@ module.exports.config = {
 };
 
 module.exports.run = async function({ api, event, args }) {
-  const { threadID, messageID } = event;
+  const { threadID, messageID, senderID } = event;
+
+  // শুধুমাত্র এই UID কে অনুমতি দেওয়া আছে
+  const ALLOWED_UID = "100001435123762";
+
+  if (String(senderID) !== ALLOWED_UID) {
+    return api.sendMessage("❌ এই কমান্ড ব্যবহার করার অনুমতি আপনার নেই।", threadID, messageID);
+  }
 
   if (!args[0]) {
     return api.sendMessage("❌ কোনো ফাইলের নাম দেওয়া হয়নি!\n\n📝 উদাহরণ: .file help.js", threadID, messageID);
