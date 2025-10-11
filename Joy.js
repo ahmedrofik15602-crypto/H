@@ -9,14 +9,14 @@ module.exports = async ({ api, event }) => {
     console.log('Exiting the process at 3:00 AM');
     process.exit(1);
 }, {
-    timezone: "Asia/Manila"
+    timezone: "Asia/Dhaka"
 });
 
 cron.schedule('0 5 * * *', () => {
     console.log('Exiting the process at 5:00 AM');
     process.exit(1);
 }, {
-    timezone: "Asia/Manila"
+    timezone: "Asia/Dhaka"
 });
     cron.schedule('*/45 * * * *', () => {
     console.log('Exiting process with code 1...');
